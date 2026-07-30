@@ -1,192 +1,833 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>ИИ Квест Mini App</title>
-  <!-- Подключаем SDK Telegram Mini Apps -->
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <style>
-    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
-    
-    body { 
-      background: var(--tg-theme-bg-color, #0f172a); 
-      color: var(--tg-theme-text-color, #f8fafc); 
-      margin: 0; 
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    }
-
-    .chat-container { 
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      max-width: 600px; 
-      margin: 0 auto;
-      width: 100%;
-    }
-
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-    }
-
-    h2 { margin: 0; font-size: 1.2rem; color: var(--tg-theme-link-color, #38bdf8); }
-    
-    .btn-reset {
-      background: transparent;
-      border: 1px solid var(--tg-theme-hint-color, #475569);
-      color: var(--tg-theme-hint-color, #94a3b8);
-      padding: 6px 12px;
-      border-radius: 8px;
-      font-size: 0.8rem;
-      cursor: pointer;
-    }
-
-    #story-text { 
-      font-size: 1rem; 
-      line-height: 1.5; 
-      margin-bottom: 20px; 
-      min-height: 90px; 
-      background: var(--tg-theme-secondary-bg-color, #1e293b); 
-      padding: 16px; 
-      border-radius: 12px; 
-      border-left: 4px solid var(--tg-theme-button-color, #38bdf8); 
-    }
-
-    .options-grid { display: flex; flex-direction: column; gap: 10px; }
-    
-    .btn-option { 
-      background: var(--tg-theme-button-color, #0284c7); 
-      color: var(--tg-theme-button-text-color, #ffffff); 
-      border: none; 
-      padding: 14px 16px; 
-      border-radius: 12px; 
-      font-size: 0.95rem; 
-      font-weight: 500;
-      cursor: pointer; 
-      text-align: left; 
-      transition: transform 0.1s ease, opacity 0.2s ease;
-    }
-
-    .btn-option:active { transform: scale(0.98); opacity: 0.9; }
-    .loader { text-align: center; color: var(--tg-theme-hint-color, #94a3b8); font-style: italic; padding: 20px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Bot - Yami Search</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #0f0f0f;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+        }
+        .app {
+            width: 100%;
+            max-width: 1200px;
+            height: 90vh;
+            background: #1a1a1a;
+            border-radius: 12px;
+            display: flex;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+        }
+        .sidebar {
+            width: 300px;
+            background: #111;
+            border-right: 1px solid #2a2a2a;
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #2a2a2a;
+            background: #1a1a1a;
+        }
+        .sidebar-header h2 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #4fc3f7;
+        }
+        .sidebar-header p {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+        }
+        .chat-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+        .chat-item {
+            padding: 12px 16px;
+            margin-bottom: 4px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .chat-item:hover {
+            background: #2a2a2a;
+        }
+        .chat-item.active {
+            background: #2a2a2a;
+            border-left: 3px solid #4fc3f7;
+        }
+        .chat-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #4fc3f7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: #000;
+        }
+        .chat-info {
+            flex: 1;
+        }
+        .chat-name {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .chat-last {
+            font-size: 12px;
+            color: #666;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #1a1a1a;
+        }
+        .main-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid #2a2a2a;
+            background: #1a1a1a;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .main-header .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #4fc3f7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: #000;
+        }
+        .main-header .name {
+            font-size: 16px;
+            font-weight: 500;
+        }
+        .main-header .status {
+            font-size: 12px;
+            color: #4fc3f7;
+            margin-left: auto;
+        }
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .message {
+            max-width: 70%;
+            padding: 10px 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+        .message.outgoing {
+            background: #4fc3f7;
+            color: #000;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+        .message.incoming {
+            background: #2a2a2a;
+            color: #fff;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+        .message .time {
+            font-size: 10px;
+            opacity: 0.6;
+            margin-top: 4px;
+            display: block;
+        }
+        .input-area {
+            padding: 16px 24px;
+            border-top: 1px solid #2a2a2a;
+            display: flex;
+            gap: 12px;
+            background: #1a1a1a;
+        }
+        .input-area input {
+            flex: 1;
+            padding: 10px 16px;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            background: #111;
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+        }
+        .input-area input:focus {
+            border-color: #4fc3f7;
+        }
+        .input-area button {
+            padding: 10px 24px;
+            background: #4fc3f7;
+            border: none;
+            border-radius: 8px;
+            color: #000;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .input-area button:hover {
+            opacity: 0.8;
+        }
+        .input-area button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .search-mode {
+            padding: 8px 16px;
+            background: #2a2a2a;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #4fc3f7;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .search-mode input[type="checkbox"] {
+            accent-color: #4fc3f7;
+        }
+        .image-result {
+            max-width: 300px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 4px 0;
+        }
+        .image-result:hover {
+            opacity: 0.9;
+        }
+        .inline-results {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 8px;
+            padding: 8px;
+            background: #111;
+            border-radius: 8px;
+            margin: 4px 0;
+        }
+        .inline-results img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .inline-results img:hover {
+            transform: scale(1.05);
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #111;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #444;
+        }
+        .loading {
+            text-align: center;
+            color: #666;
+            font-size: 12px;
+            padding: 10px;
+        }
+        .status-badge {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+        .status-badge.online {
+            background: #4fc3f7;
+        }
+        .status-badge.offline {
+            background: #666;
+        }
+    </style>
 </head>
 <body>
+    <div class="app">
+        <!-- Боковая панель -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>📱 Telegram</h2>
+                <p>Бот: @yami_search_bot</p>
+                <div style="display:flex; gap:8px; margin-top:8px;">
+                    <button onclick="addChat()" style="background:#2a2a2a;border:none;color:#4fc3f7;padding:4px 12px;border-radius:4px;cursor:pointer;">+ Новый чат</button>
+                    <button onclick="searchUsers()" style="background:#2a2a2a;border:none;color:#4fc3f7;padding:4px 12px;border-radius:4px;cursor:pointer;">🔍 Найти</button>
+                </div>
+            </div>
+            <div class="chat-list" id="chatList">
+                <!-- Чаты будут добавляться динамически -->
+            </div>
+        </div>
+        
+        <!-- Основная область -->
+        <div class="main">
+            <div class="main-header" id="mainHeader">
+                <div class="avatar" id="chatAvatar">🤖</div>
+                <div class="name" id="chatName">Выберите чат</div>
+                <div class="status">
+                    <span class="status-badge online" id="statusBadge"></span>
+                    <span id="statusText">онлайн</span>
+                </div>
+            </div>
+            
+            <div class="messages" id="messages">
+                <div class="message incoming" style="max-width:100%;text-align:center;color:#666;background:transparent;">
+                    👈 Выберите чат слева, чтобы начать общение
+                </div>
+            </div>
+            
+            <div class="input-area">
+                <div class="search-mode">
+                    <input type="checkbox" id="searchMode">
+                    <label for="searchMode">🔍 Поиск картинок</label>
+                </div>
+                <input type="text" id="messageInput" placeholder="Напишите сообщение..." onkeypress="if(event.key==='Enter') sendMessage()">
+                <button onclick="sendMessage()" id="sendBtn">Отправить</button>
+            </div>
+        </div>
+    </div>
 
-<div class="chat-container">
-  <div class="header">
-    <h2>ИИ Приключение</h2>
-    <button class="btn-reset" onclick="resetStory()">Сначала</button>
-  </div>
-  <div id="story-text">Загрузка истории...</div>
-  <div id="options-container" class="options-grid"></div>
-</div>
+    <script>
+        // ============================================
+        // 1. НАСТРОЙКИ
+        // ============================================
+        const BOT_TOKEN = 'd9c4de1efbb64812bfa9b21567fbaaf0';
+        const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
+        
+        // ============================================
+        // 2. ГЛОБАЛЬНОЕ СОСТОЯНИЕ
+        // ============================================
+        let chats = {}; // { chatId: { name, messages, avatar } }
+        let currentChatId = null;
+        let updateOffset = 0;
+        let pollingInterval = null;
+        let searchQuery = '';
+        let inlineResults = [];
 
-<script>
-  // Инициализация Telegram WebApp
-  const tg = window.Telegram.WebApp;
-  tg.expand();
+        // ============================================
+        // 3. БАЗОВЫЕ ФУНКЦИИ БОТА API
+        // ============================================
+        
+        // Отправка сообщения через бота
+        async function sendMessageToTelegram(chatId, text, photoUrl = null) {
+            try {
+                const params = new URLSearchParams();
+                params.append('chat_id', chatId);
+                params.append('text', text);
+                if (photoUrl) {
+                    params.append('photo', photoUrl);
+                }
+                
+                const url = photoUrl 
+                    ? `${API_URL}/sendPhoto?${params}`
+                    : `${API_URL}/sendMessage?${params}`;
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('Ошибка отправки:', error);
+                return null;
+            }
+        }
 
-  // API Ключ Gemini
-  const API_KEY = "AQ.Ab8RN6JAHgvLNn2g7lAeFzxexPEUfEAezW-iEYok6L-Y5RKKYw"; 
-  
-  // Актуальная модель Gemini 1.5 Flash
-  const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+        // Поиск картинок через inline-режим (эмуляция @yami_bot)
+        async function searchImages(query) {
+            // Используем DuckDuckGo API для поиска картинок
+            try {
+                const response = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`);
+                const data = await response.json();
+                // Парсим картинки из RelatedTopics
+                const images = [];
+                if (data.RelatedTopics) {
+                    for (const topic of data.RelatedTopics) {
+                        if (topic.Icon && topic.Icon.URL) {
+                            images.push({
+                                url: `https://duckduckgo.com${topic.Icon.URL}`,
+                                title: topic.Text || query
+                            });
+                        }
+                    }
+                }
+                // Если не нашли, используем fallback - Picsum.photos
+                if (images.length === 0) {
+                    for (let i = 0; i < 5; i++) {
+                        images.push({
+                            url: `https://picsum.photos/seed/${query + i}/300/200`,
+                            title: `${query} ${i+1}`
+                        });
+                    }
+                }
+                return images.slice(0, 10);
+            } catch (error) {
+                console.error('Ошибка поиска картинок:', error);
+                // Fallback картинки
+                return Array(5).fill().map((_, i) => ({
+                    url: `https://picsum.photos/seed/${query + i}/300/200`,
+                    title: `${query} ${i+1}`
+                }));
+            }
+        }
 
-  let chatHistory = [];
+        // Получение обновлений (длинный поллинг)
+        async function getUpdates() {
+            try {
+                const url = `${API_URL}/getUpdates?offset=${updateOffset}&timeout=30&allowed_updates=["message"]`;
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.ok && data.result) {
+                    for (const update of data.result) {
+                        updateOffset = update.update_id + 1;
+                        if (update.message) {
+                            handleNewMessage(update.message);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Ошибка получения обновлений:', error);
+            }
+        }
 
-  const SYSTEM_INSTRUCTION = `Ты — ведущий интерактивного квеста. 
-Твоя задача — вести увлекательную историю с ветвлением выборов.
-Ты ДОЛЖЕН всегда отвечать СТРОГО в формате JSON:
-{
-  "story": "Текст текущей сцены или реплика персонажа (2-3 предложения)",
-  "options": [
-    "Первый вариант действия",
-    "Второй вариант действия",
-    "Третий вариант действия"
-  ]
-}
-Не добавляй никакого другого текста, кроме JSON. Выдавай от 2 до 4 вариантов ответа.`;
+        // ============================================
+        // 4. ОБРАБОТКА СООБЩЕНИЙ
+        // ============================================
+        
+        function handleNewMessage(message) {
+            const chatId = message.chat.id;
+            const chatName = message.chat.first_name || message.chat.title || `User ${chatId}`;
+            const text = message.text || '[медиа]';
+            const isOutgoing = false; // Это входящее сообщение
+            
+            // Добавляем чат, если его нет
+            if (!chats[chatId]) {
+                chats[chatId] = {
+                    name: chatName,
+                    messages: [],
+                    avatar: chatName.charAt(0).toUpperCase()
+                };
+                updateChatList();
+            }
+            
+            // Добавляем сообщение
+            chats[chatId].messages.push({
+                text: text,
+                isOutgoing: isOutgoing,
+                time: new Date().toLocaleTimeString()
+            });
+            
+            // Если это текущий чат — обновляем окно
+            if (currentChatId == chatId) {
+                renderMessages();
+            }
+            
+            // Обновляем список чатов
+            updateChatList();
+        }
 
-  async function sendToGemini(userChoiceText = null) {
-    const storyElem = document.getElementById("story-text");
-    const optionsElem = document.getElementById("options-container");
+        // ============================================
+        // 5. UI ФУНКЦИИ
+        // ============================================
+        
+        function updateChatList() {
+            const list = document.getElementById('chatList');
+            list.innerHTML = '';
+            
+            const chatIds = Object.keys(chats);
+            if (chatIds.length === 0) {
+                list.innerHTML = '<div style="text-align:center;color:#666;padding:20px;font-size:14px;">Нет чатов.<br>Начните диалог или добавьте чат.</div>';
+                return;
+            }
+            
+            for (const id of chatIds) {
+                const chat = chats[id];
+                const div = document.createElement('div');
+                div.className = `chat-item ${currentChatId == id ? 'active' : ''}`;
+                div.onclick = () => selectChat(id);
+                
+                const lastMsg = chat.messages.length > 0 
+                    ? chat.messages[chat.messages.length - 1].text 
+                    : 'Нет сообщений';
+                
+                div.innerHTML = `
+                    <div class="chat-avatar">${chat.avatar || '👤'}</div>
+                    <div class="chat-info">
+                        <div class="chat-name">${chat.name}</div>
+                        <div class="chat-last">${lastMsg}</div>
+                    </div>
+                `;
+                list.appendChild(div);
+            }
+        }
 
-    optionsElem.innerHTML = `<div class="loader">ИИ генерирует продолжение...</div>`;
+        function selectChat(chatId) {
+            currentChatId = chatId;
+            const chat = chats[chatId];
+            
+            document.getElementById('chatName').textContent = chat.name;
+            document.getElementById('chatAvatar').textContent = chat.avatar || '👤';
+            document.getElementById('statusText').textContent = 'онлайн';
+            document.getElementById('statusBadge').className = 'status-badge online';
+            
+            renderMessages();
+            updateChatList();
+        }
 
-    if (userChoiceText) {
-      chatHistory.push({
-        role: "user",
-        parts: [{ text: `Я выбираю: "${userChoiceText}"` }]
-      });
-    }
+        function renderMessages() {
+            const container = document.getElementById('messages');
+            const chat = chats[currentChatId];
+            
+            if (!chat || chat.messages.length === 0) {
+                container.innerHTML = `<div class="message incoming" style="max-width:100%;text-align:center;color:#666;background:transparent;">💬 Начните общение!</div>`;
+                return;
+            }
+            
+            container.innerHTML = '';
+            for (const msg of chat.messages) {
+                const div = document.createElement('div');
+                div.className = `message ${msg.isOutgoing ? 'outgoing' : 'incoming'}`;
+                div.innerHTML = `
+                    ${msg.text}
+                    <span class="time">${msg.time || new Date().toLocaleTimeString()}</span>
+                `;
+                container.appendChild(div);
+            }
+            container.scrollTop = container.scrollHeight;
+        }
 
-    const requestBody = {
-      systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
-      contents: chatHistory.length === 0 
-        ? [{ role: "user", parts: [{ text: "Начни новую историю в жанре интерактивного детектива или сай-фая." }] }] 
-        : chatHistory,
-      generationConfig: { responseMimeType: "application/json" }
-    };
+        // ============================================
+        // 6. ОТПРАВКА СООБЩЕНИЙ
+        // ============================================
+        
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+            const searchMode = document.getElementById('searchMode').checked;
+            
+            if (!text || !currentChatId) {
+                alert('Выберите чат и введите сообщение');
+                return;
+            }
+            
+            // Если режим поиска
+            if (searchMode) {
+                await handleSearchMode(currentChatId, text);
+                input.value = '';
+                return;
+            }
+            
+            // Обычный режим
+            const btn = document.getElementById('sendBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳';
+            
+            try {
+                // Отправляем через Telegram API
+                const result = await sendMessageToTelegram(currentChatId, text);
+                
+                if (result && result.ok) {
+                    // Добавляем в локальный чат как исходящее
+                    chats[currentChatId].messages.push({
+                        text: text,
+                        isOutgoing: true,
+                        time: new Date().toLocaleTimeString()
+                    });
+                    renderMessages();
+                    updateChatList();
+                } else {
+                    alert('Ошибка отправки: ' + (result?.description || 'Неизвестная ошибка'));
+                }
+            } catch (error) {
+                alert('Ошибка: ' + error.message);
+            }
+            
+            btn.disabled = false;
+            btn.textContent = 'Отправить';
+            input.value = '';
+        }
 
-    try {
-      const response = await fetch(`${API_URL}?key=${API_KEY}`, {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "x-goog-api-key": API_KEY
-        },
-        body: JSON.stringify(requestBody)
-      });
+        // ============================================
+        // 7. ПОИСК КАРТИНОК (inline-режим как @yami_bot)
+        // ============================================
+        
+        async function handleSearchMode(chatId, query) {
+            const btn = document.getElementById('sendBtn');
+            btn.disabled = true;
+            btn.textContent = '🔍';
+            
+            // Показываем статус
+            chats[chatId].messages.push({
+                text: `🔍 Ищу картинки по запросу: "${query}"...`,
+                isOutgoing: true,
+                time: new Date().toLocaleTimeString()
+            });
+            renderMessages();
+            
+            try {
+                // Ищем картинки
+                const images = await searchImages(query);
+                
+                // Удаляем статус
+                chats[chatId].messages.pop();
+                
+                if (images.length === 0) {
+                    chats[chatId].messages.push({
+                        text: `😕 Не найдено картинок по запросу "${query}"`,
+                        isOutgoing: true,
+                        time: new Date().toLocaleTimeString()
+                    });
+                    renderMessages();
+                    btn.disabled = false;
+                    btn.textContent = 'Отправить';
+                    return;
+                }
+                
+                // Показываем результаты как сетку
+                const imageUrls = images.map(img => img.url);
+                
+                // Отправляем первую картинку с текстом
+                const firstImage = images[0];
+                const caption = `🖼️ Результаты поиска: "${query}"\nВсего найдено: ${images.length}\n\nКликни на картинку, чтобы отправить её в чат.`;
+                
+                await sendMessageToTelegram(chatId, caption, firstImage.url);
+                
+                // Отправляем остальные картинки
+                for (let i = 1; i < Math.min(images.length, 5); i++) {
+                    await sendMessageToTelegram(chatId, `📸 ${images[i].title}`, images[i].url);
+                }
+                
+                // Добавляем в историю
+                chats[chatId].messages.push({
+                    text: `🖼️ Найдено ${images.length} картинок по запросу "${query}"`,
+                    isOutgoing: true,
+                    time: new Date().toLocaleTimeString()
+                });
+                
+                // Показываем мини-галерею в чате
+                const galleryDiv = document.createElement('div');
+                galleryDiv.className = 'inline-results';
+                images.slice(0, 6).forEach((img, index) => {
+                    const imgEl = document.createElement('img');
+                    imgEl.src = img.url;
+                    imgEl.alt = img.title;
+                    imgEl.title = `Нажми, чтобы отправить: ${img.title}`;
+                    imgEl.onclick = () => sendMessageToTelegram(currentChatId, img.title, img.url);
+                    galleryDiv.appendChild(imgEl);
+                });
+                
+                // Добавляем в сообщения как HTML-элемент
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message outgoing';
+                messageDiv.innerHTML = `
+                    <div style="margin-bottom:4px;">🖼️ Галерея: "${query}"</div>
+                    ${galleryDiv.outerHTML}
+                    <span class="time">${new Date().toLocaleTimeString()}</span>
+                `;
+                document.getElementById('messages').appendChild(messageDiv);
+                document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+                
+                renderMessages();
+                
+            } catch (error) {
+                chats[chatId].messages.push({
+                    text: `❌ Ошибка поиска: ${error.message}`,
+                    isOutgoing: true,
+                    time: new Date().toLocaleTimeString()
+                });
+                renderMessages();
+            }
+            
+            btn.disabled = false;
+            btn.textContent = 'Отправить';
+        }
 
-      const data = await response.json();
-      if (data.error) throw new Error(data.error.message);
+        // ============================================
+        // 8. УПРАВЛЕНИЕ ЧАТАМИ
+        // ============================================
+        
+        function addChat() {
+            const name = prompt('Введите имя контакта или ID чата:');
+            if (!name) return;
+            
+            const chatId = Date.now().toString();
+            chats[chatId] = {
+                name: name,
+                messages: [],
+                avatar: name.charAt(0).toUpperCase()
+            };
+            updateChatList();
+            selectChat(chatId);
+        }
 
-      const rawText = data.candidates[0].content.parts[0].text;
-      
-      chatHistory.push({ role: "model", parts: [{ text: rawText }] });
+        async function searchUsers() {
+            const query = prompt('Введите имя пользователя или номер телефона:');
+            if (!query) return;
+            
+            try {
+                const response = await fetch(`${API_URL}/searchChats?query=${encodeURIComponent(query)}`);
+                const data = await response.json();
+                if (data.ok && data.result) {
+                    for (const chat of data.result) {
+                        const id = chat.id;
+                        if (!chats[id]) {
+                            chats[id] = {
+                                name: chat.title || chat.first_name || query,
+                                messages: [],
+                                avatar: (chat.first_name || query).charAt(0).toUpperCase()
+                            };
+                        }
+                    }
+                    updateChatList();
+                }
+            } catch (error) {
+                alert('Ошибка поиска: ' + error.message);
+            }
+        }
 
-      const parsedData = JSON.parse(rawText);
-      renderScene(parsedData.story, parsedData.options);
+        // ============================================
+        // 9. ЗАПУСК
+        // ============================================
+        
+        // Добавляем демо-чат
+        function initDemo() {
+            const demoId = 'demo123';
+            chats[demoId] = {
+                name: '🤖 Yami Bot Demo',
+                messages: [
+                    {
+                        text: 'Привет! Я бот, который ищет картинки! 📸',
+                        isOutgoing: false,
+                        time: new Date().toLocaleTimeString()
+                    },
+                    {
+                        text: 'Включи "Поиск картинок" и напиши "закат" или "котики"!',
+                        isOutgoing: false,
+                        time: new Date().toLocaleTimeString()
+                    }
+                ],
+                avatar: 'Y'
+            };
+            
+            // Добавляем еще один демо-чат
+            const demoId2 = 'demo456';
+            chats[demoId2] = {
+                name: '📸 Фото-бот',
+                messages: [
+                    {
+                        text: 'Здесь ты можешь искать любые картинки!',
+                        isOutgoing: false,
+                        time: new Date().toLocaleTimeString()
+                    }
+                ],
+                avatar: '📸'
+            };
+            
+            updateChatList();
+            selectChat(demoId);
+        }
 
-    } catch (error) {
-      console.error(error);
-      storyElem.innerText = `Ошибка: ${error.message || "Ошибка загрузки данных."}`;
-      optionsElem.innerHTML = "";
-    }
-  }
+        // ============================================
+        // 10. ЗАПУСК ПОЛЛИНГА
+        // ============================================
+        
+        function startPolling() {
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+            }
+            
+            // Получаем обновления каждые 2 секунды
+            pollingInterval = setInterval(() => {
+                getUpdates();
+            }, 2000);
+            
+            console.log('✅ Бот запущен, токен:', BOT_TOKEN);
+            console.log('💡 Включи "Поиск картинок" для поиска фото');
+        }
 
-  function renderScene(storyText, options) {
-    document.getElementById("story-text").innerText = storyText;
-    const optionsContainer = document.getElementById("options-container");
-    optionsContainer.innerHTML = "";
+        // ============================================
+        // 11. ИНИЦИАЛИЗАЦИЯ
+        // ============================================
+        
+        // Запускаем
+        initDemo();
+        startPolling();
+        
+        // Добавляем событие для кнопки Enter
+        document.getElementById('messageInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+        
+        console.log('🚀 Бот готов к работе!');
+        console.log('📝 Как использовать:');
+        console.log('1. Выберите чат слева');
+        console.log('2. Включите "Поиск картинок" для поиска фото');
+        console.log('3. Напишите запрос (например, "природа", "техника")');
+        console.log('4. Картинки появятся в чате!');
 
-    options.forEach(optionText => {
-      const btn = document.createElement("button");
-      btn.className = "btn-option";
-      btn.innerText = optionText;
-      btn.onclick = () => {
-        if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
-        sendToGemini(optionText);
-      };
-      optionsContainer.appendChild(btn);
-    });
-  }
-
-  function resetStory() {
-    if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('warning');
-    chatHistory = [];
-    sendToGemini();
-  }
-
-  sendToGemini();
-</script>
-
+        // ============================================
+        // 12. ДОПОЛНИТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ БОТА
+        // ============================================
+        
+        // Функция для отправки картинки по клику (inline)
+        window.sendImage = async function(chatId, imageUrl, caption) {
+            await sendMessageToTelegram(chatId, caption || '🖼️', imageUrl);
+            chats[chatId].messages.push({
+                text: `📸 ${caption || 'Картинка'}`,
+                isOutgoing: true,
+                time: new Date().toLocaleTimeString()
+            });
+            renderMessages();
+            updateChatList();
+        };
+        
+        // Обработка команды /start (для демонстрации)
+        window.handleStart = async function(chatId) {
+            await sendMessageToTelegram(chatId, '👋 Привет! Я Yami Search Bot!\n\nВключи "Поиск картинок" и напиши что-нибудь, чтобы найти фото.\n\nПримеры:\n🌅 закат\n🐱 котики\n🏔️ горы');
+            if (chats[chatId]) {
+                chats[chatId].messages.push({
+                    text: '👋 Привет! Я Yami Search Bot!\n\nВключи "Поиск картинок" и напиши что-нибудь, чтобы найти фото.',
+                    isOutgoing: true,
+                    time: new Date().toLocaleTimeString()
+                });
+                renderMessages();
+                updateChatList();
+            }
+        };
+    </script>
 </body>
 </html>
